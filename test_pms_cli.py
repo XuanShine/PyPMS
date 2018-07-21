@@ -105,9 +105,9 @@ def test_insert_new(pms_empty_db):
 
 def test_payment(pms_empty_db):
     res = Reservation.create()
-    payment(res, dt.today(), 23, Payment_Method.CB, 'Test notes')
+    payment(res, dt.today(), 23, PaymentMethod.CB, 'Test notes')
     assert Paiement.select()[0].amount == 23
-    assert Paiement.select()[0].get_pay_method() == Payment_Method.CB
+    assert Paiement.select()[0].get_pay_method() == PaymentMethod.CB
     assert Paiement.select()[0].date.strftime("%d%m%Y") == dt.today().strftime("%d%m%Y")
     assert Paiement.select()[0].reservation == res
     assert Paiement.select()[0].notes == 'Test notes'

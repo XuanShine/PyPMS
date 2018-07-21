@@ -61,7 +61,7 @@ def insert_new(
     guest.reservations.add(res)
 
 
-def payment(reservation:Reservation, date, amount:float, method:Payment_Method, notes:str):
+def payment(reservation:Reservation, date, amount:float, method:PaymentMethod, notes:str):
     pay = Paiement(reservation=reservation, date=date, amount=amount, notes=notes)
     pay.set_pay_method(method)
     pay.save()
@@ -252,7 +252,7 @@ class PMS_CLI:
             date = dt.today()
         else:
             date = dt.strptime(date, "%d/%m/%Y")
-        payment(stay.reservation, date, amount, Payment_Method(method), notes)
+        payment(stay.reservation, date, amount, PaymentMethod(method), notes)
 
 
 if __name__ == "__main__":

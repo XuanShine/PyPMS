@@ -167,7 +167,7 @@ def test_paiement(db_guest):
 
     paiement2 = Paiement.create(amount=20, reservation=res_01_01_2018)
     assert res_01_01_2018.paiements[1].amount == 20
-    assert res_01_01_2018.paiements[1].get_pay_method() == Payment_Method.AUTRE
-    paiement2.set_pay_method(Payment_Method.CB)
+    assert res_01_01_2018.paiements[1].get_pay_method() == PaymentMethod.AUTRE
+    paiement2.set_pay_method(PaymentMethod.CB)
     paiement2.save()
-    assert res_01_01_2018.paiements[1].get_pay_method() == Payment_Method.CB
+    assert res_01_01_2018.paiements[1].get_pay_method() == PaymentMethod.CB

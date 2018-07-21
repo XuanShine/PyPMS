@@ -6,7 +6,7 @@ from enum import Enum
 database = SqliteDatabase("reservation.db")
 
 
-Payment_Method = Enum('Payment_Method', 'CB ESPECE CHEQUE CHEQUE_VACANCE VAD VIREMENT AUTRE')
+PaymentMethod = Enum('PaymentMethod', 'CB ESPECE CHEQUE CHEQUE_VACANCE VAD VIREMENT AUTRE')
 
 class BaseModel(Model):
     class Meta:
@@ -78,18 +78,38 @@ class Paiement(BaseModel):
     pay_method = IntegerField(default=None, null=True)
     notes = CharField(default='')
 
-    def set_pay_method(self, method: Payment_Method):
+    def set_pay_method(self, method: PaymentMethod):
         self.pay_method = method.value
 
-    def get_pay_method(self) -> Payment_Method:
+    def get_pay_method(self) -> PaymentMethod:
         if not self.pay_method:
-            return Payment_Method.AUTRE
-        return Payment_Method(self.pay_method)
+            return PaymentMethod.AUTRE
+        return PaymentMethod(self.pay_method)
+
+
+class CategoryProduct(BaseModel):
+    name = CharField()
+
+class Product(BaseModel):
+    name = CharField()
+    initial_price = FloatField()
+    category = ForeignKeyField(CategoryProduct, backref='products', null=True, default=None)
+    tax = FloatField(default=0.2)
+    stock = IntegerField(default=-1)
+
+class Sale:
+    date = DateTimeField(default=datetime.now())
+    product = ForeignKeyField(Product, backref='sales')
+    reservation = ForeignKeyField(Reservation, backref='sales')
+    price = FloatField()
+    quantity = IntegerField(default=1)
+
+
 
 def create_tables():
     with database:
         database.create_tables(
-            [Society, Guest, Reservation, Stay, Paiement, GuestReservation]
+            [Society, Guest, Reservation, Stay, Paiement, GuestReservation, Product]
         )
 
 
