@@ -101,3 +101,13 @@ def test_insert_new(pms_empty_db):
     assert len(list(Reservation.select())) == 2
     assert res in Guest.get(Guest.name == "Jean").reservations
     assert res in Guest.get(Guest.name == "Dom").reservations
+
+
+def test_payment(pms_empty_db):
+    res = Reservation.create()
+    payment(res, dt.today(), 23, Payment_Method.CB, 'Test notes')
+    assert Paiement.select()[0].amount == 23
+    assert Paiement.select()[0].get_pay_method() == Payment_Method.CB
+    assert Paiement.select()[0].date.strftime("%d%m%Y") == dt.today().strftime("%d%m%Y")
+    assert Paiement.select()[0].reservation == res
+    assert Paiement.select()[0].notes == 'Test notes'
