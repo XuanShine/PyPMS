@@ -49,6 +49,11 @@ def insert_new(
     guest.reservations.add(res)
 
 
+def payment(reservation:Reservation, date, amount:float, method:Payment_Method, notes:str):
+    pay = Paiement(reservation=reservation, date=date, amount=amount, notes=notes)
+    pay.set_pay_method(method)
+    pay.save()
+
 class PMS_CLI:
     def run(self):
 
