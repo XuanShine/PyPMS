@@ -14,6 +14,18 @@ s{chambre}-{date} - selectionne la réservation - ex: s102-18/07 ou s103-14/08/2
 q - Quit
 """
 
+MESSAGE_IN_STAY_SELECTION = """\
+r - Voir la réservation
+m - Modifier
+c - Cancel
+p - payer
+XXX - Changer numéro de chambre ex: 402
+"""
+
+MESSAGE_IN_PAYMENT = """\
+ 1: CB, 2: ESPECE, 3: CHEQUE, 4: CHEQUE_VACANCE, 5: VAD, 6: VIREMENT, 7: AUTRE
+"""
+
 # ROOMS = [301, 302, 303, 304, 305, 306, 307, 308,
 #         401, 402, 403, 404, 405, 406, 407, 408,
 #         501, 502, 503, 504, 505, 506, 507, 508]
@@ -157,9 +169,7 @@ class PMS_CLI:
         if print_only:
             return
 
-        user_input: str = input(
-            "r - Voir la réservation\nm - Modifier\nc - Cancel\nXXX - Changer numéro de chambre ex: 402\n"
-        )
+        user_input: str = input(MESSAGE_IN_STAY_SELECTION)
         if user_input == "c":
             return
         elif user_input.isdigit():
@@ -184,14 +194,20 @@ class PMS_CLI:
             stay.save()
         elif user_input == "r":
             self._info_reservation(stay.reservation)
+        elif user_input == 'p':
+            self.info_payment(stay)
 
-    def _info_reservation(self, reservation: Reservation):
+    def _info_reservation(self, reservation: Reservation, print_only=False):
         for n, stay in zip(range(len(reservation.stays)), reservation.stays):
             print(f"{n+1}: ")
             self._info_stay(stay, print_only=True)
             print("-" * 130)
         paid = sum(map(lambda x: x.amount, reservation.paiements))
-        print(f"Prix: {reservation.total_price()} - Payé: {paid} - Reste: {reservation.total_price() - paid}")
+        print(f"Prix: {reservation.total_price()} - Payé: {paid} - Reste: {reservation.total_price() - float(paid)}")
+
+        if print_only:
+            return
+
         user_input = input(
             "d{n} - Séparer le séjour n dans une nouvelle réservation\ns{n} - Selectionner le séjour n\nc - Cancel\n"
         )
@@ -216,6 +232,23 @@ class PMS_CLI:
         price = input("prix: ")
         notes = input("Notes: ")
         insert_new(name, check_in, check_out, room, price, notes)
+    
+    def info_payment(self, stay:Stay):
+        self._info_reservation(stay.reservation, print_only=True)
+        print('Paiements actuels:')
+        for pay in stay.reservation.paiements:
+            print(f'{pay.date}: {pay.amount}€ - {pay.get_pay_method()} - {pay.notes}')
+        else:
+            print('Aucun')
+        amount = float(input('Montant: '))
+        date = input("date (vide si aujourd'hui, dd/mm/yyyy): ")
+        method = int(input(MESSAGE_IN_PAYMENT + ': '))
+        notes = input('Notes: ')
+        if not date:
+            date = dt.today()
+        else:
+            date = dt.strptime(date, "%d/%m/%Y")
+        payment(stay.reservation, date, amount, Payment_Method(method), notes)
 
 
 if __name__ == "__main__":
