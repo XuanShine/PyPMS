@@ -4,3 +4,4 @@ __pycache__/
 venv/
 .pylintrc
 migrations/
+migrate.py
