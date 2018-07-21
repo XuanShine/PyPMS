@@ -76,6 +76,7 @@ class Paiement(BaseModel):
     amount = DecimalField(default=0)
     reservation = ForeignKeyField(Reservation, backref="paiements")
     pay_method = IntegerField(default=None, null=True)
+    notes = CharField(default='')
 
     def set_pay_method(self, method: Payment_Method):
         self.pay_method = method.value
