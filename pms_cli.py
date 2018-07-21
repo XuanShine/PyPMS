@@ -240,7 +240,11 @@ class PMS_CLI:
             print(f'{pay.date}: {pay.amount}€ - {pay.get_pay_method()} - {pay.notes}')
         else:
             print('Aucun')
-        amount = float(input('Montant: '))
+        amount = input('Montant (c - cancel): ')
+        if amount == 'c':
+            return
+        else:
+            amount = int(amount)
         date = input("date (vide si aujourd'hui, dd/mm/yyyy): ")
         method = int(input(MESSAGE_IN_PAYMENT + ': '))
         notes = input('Notes: ')
