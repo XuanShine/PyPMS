@@ -61,10 +61,13 @@ def insert_new(
     guest.reservations.add(res)
 
 
-def payment(reservation:Reservation, date, amount:float, method:PaymentMethod, notes:str):
+def payment(
+    reservation: Reservation, date, amount: float, method: PaymentMethod, notes: str
+):
     pay = Paiement(reservation=reservation, date=date, amount=amount, notes=notes)
     pay.set_pay_method(method)
     pay.save()
+
 
 class PMS_CLI:
     def run(self):
@@ -194,7 +197,7 @@ class PMS_CLI:
             stay.save()
         elif user_input == "r":
             self._info_reservation(stay.reservation)
-        elif user_input == 'p':
+        elif user_input == "p":
             self.info_payment(stay)
 
     def _info_reservation(self, reservation: Reservation, print_only=False):
@@ -203,7 +206,9 @@ class PMS_CLI:
             self._info_stay(stay, print_only=True)
             print("-" * 130)
         paid = sum(map(lambda x: x.amount, reservation.paiements))
-        print(f"Prix: {reservation.total_price()} - Payé: {paid} - Reste: {reservation.total_price() - float(paid)}")
+        print(
+            f"Prix: {reservation.total_price()} - Payé: {paid} - Reste: {reservation.total_price() - float(paid)}"
+        )
 
         if print_only:
             return
@@ -232,22 +237,22 @@ class PMS_CLI:
         price = input("prix: ")
         notes = input("Notes: ")
         insert_new(name, check_in, check_out, room, price, notes)
-    
-    def info_payment(self, stay:Stay):
+
+    def info_payment(self, stay: Stay):
         self._info_reservation(stay.reservation, print_only=True)
-        print('Paiements actuels:')
+        print("Paiements actuels:")
+        if not stay.reservation.paiements:
+            print("AUCUN")
         for pay in stay.reservation.paiements:
-            print(f'{pay.date}: {pay.amount}€ - {pay.get_pay_method()} - {pay.notes}')
-        else:
-            print('Aucun')
-        amount = input('Montant (c - cancel): ')
-        if amount == 'c':
+            print(f"{pay.date}: {pay.amount}€ - {pay.get_pay_method()} - {pay.notes}")
+        amount = input("Montant (c - cancel): ")
+        if amount == "c":
             return
         else:
             amount = int(amount)
         date = input("date (vide si aujourd'hui, dd/mm/yyyy): ")
-        method = int(input(MESSAGE_IN_PAYMENT + ': '))
-        notes = input('Notes: ')
+        method = int(input(MESSAGE_IN_PAYMENT + ": "))
+        notes = input("Notes: ")
         if not date:
             date = dt.today()
         else:
