@@ -41,11 +41,7 @@ class Reservation(BaseModel):
 
     def total_price(self):
         try:
-            #stays_price = 0
-
-            #if self.stays:
             stays_price = sum(stay.price() for stay in self.stays) or 0
-            #if self.sales:
             products_price = sum(product.total_price() for product in self.sales) or 0
             return float(stays_price) + float(products_price)
         except AttributeError as e_info:
