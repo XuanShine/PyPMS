@@ -6,10 +6,10 @@ from datetime import datetime as dt
 from models import *
 from pms_cli import *
 
+MODELS = [Society, Guest, Stay, Paiement, Reservation, GuestReservation, CategoryProduct, Product, Sale]
 
 @pytest.yield_fixture
 def pms_empty_db():
-    MODELS = [Society, Guest, Stay, Paiement, Reservation, GuestReservation]
     test_db = SqliteDatabase(":memory:")
     test_db.bind(MODELS, bind_refs=False, bind_backrefs=False)
     test_db.connect()
@@ -23,7 +23,6 @@ def pms_empty_db():
 
 @pytest.yield_fixture
 def pms():
-    MODELS = [Society, Guest, Stay, Paiement, Reservation, GuestReservation]
     test_db = SqliteDatabase(":memory:")
     test_db.bind(MODELS, bind_refs=False, bind_backrefs=False)
     test_db.connect()
