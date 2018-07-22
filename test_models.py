@@ -192,3 +192,21 @@ def test_sale(empty_db):
     s2 = Sale.create(date=datetime(2018, 1, 2), reservation=res, product=p2, quantity=2)
     assert s1.total_price() == 3
     assert s2.total_price() == 16
+    assert res.total_price() == 19
+
+def test_reservation_total_price(empty_db):
+    res = Reservation.create()
+    p1 = Product.create(name='Soda (33cl)', initial_price=1.2, tax=0.2)
+    p2 = Product.create(name='Breakfast', initial_price=8, tax=0.1)
+    s1 = Sale.create(date=datetime(2018, 1, 1), reservation=res, product=p1, price=1, quantity=3)
+    s2 = Sale.create(date=datetime(2018, 1, 2), reservation=res, product=p2, quantity=2)
+    stay1 = Stay.create(
+        prices="50 50",
+        check_in=datetime(2018, 1, 1),
+        check_out=datetime(2018, 1, 3),
+        reservation=res,
+        room=101,
+        name="jean",
+    )
+    
+    assert res.total_price() == 119
