@@ -5,10 +5,11 @@ import pytest
 
 from models import *
 
+MODELS = [Society, Guest, Stay, Paiement, Reservation, GuestReservation, CategoryProduct, Product, Sale]
 
 @pytest.yield_fixture
 def empty_db():
-    MODELS = [Society, Guest, Stay, Paiement, Reservation, GuestReservation]
+    
     test_db = SqliteDatabase(":memory:")
     test_db.bind(MODELS, bind_refs=False, bind_backrefs=False)
     test_db.connect()
@@ -24,7 +25,6 @@ def empty_db():
 
 @pytest.yield_fixture
 def db_guest():
-    MODELS = [Society, Guest, Stay, Paiement, Reservation, GuestReservation]
     test_db = SqliteDatabase(":memory:")
     test_db.bind(MODELS, bind_refs=False, bind_backrefs=False)
     test_db.connect()
@@ -171,3 +171,24 @@ def test_paiement(db_guest):
     paiement2.set_pay_method(PaymentMethod.CB)
     paiement2.save()
     assert res_01_01_2018.paiements[1].get_pay_method() == PaymentMethod.CB
+
+def test_product(empty_db):
+    Product.create(name='Soda (33cl)', initial_price=1.2, tax=0.2)
+    assert Product.select()[0].name == 'Soda (33cl)'
+
+    boisson = CategoryProduct.create(name='boisson')
+    soda = Product.get(Product.name == 'Soda (33cl)')
+    soda.category = boisson
+    soda.save()
+
+    assert soda in boisson.products
+
+
+def test_sale(empty_db):
+    res = Reservation.create()
+    p1 = Product.create(name='Soda (33cl)', initial_price=1.2, tax=0.2)
+    p2 = Product.create(name='Breakfast', initial_price=8, tax=0.1)
+    s1 = Sale.create(date=datetime(2018, 1, 1), reservation=res, product=p1, price=1, quantity=3)
+    s2 = Sale.create(date=datetime(2018, 1, 2), reservation=res, product=p2, quantity=2)
+    assert s1.total_price() == 3
+    assert s2.total_price() == 16
