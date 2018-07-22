@@ -41,10 +41,15 @@ class Reservation(BaseModel):
 
     def total_price(self):
         try:
-            stays = self.stays
-        except AttributeError:
-            raise Exception("La réservation n'est lié à aucun séjour")
-        return sum(stay.price() for stay in stays)
+            #stays_price = 0
+
+            #if self.stays:
+            stays_price = sum(stay.price() for stay in self.stays) or 0
+            #if self.sales:
+            products_price = sum(product.total_price() for product in self.sales) or 0
+            return float(stays_price) + float(products_price)
+        except AttributeError as e_info:
+            raise AttributeError(e_info)
 
 
 GuestReservation = Reservation.guests.get_through_model()
@@ -97,19 +102,24 @@ class Product(BaseModel):
     tax = FloatField(default=0.2)
     stock = IntegerField(default=-1)
 
-class Sale:
+class Sale(BaseModel):
     date = DateTimeField(default=datetime.now())
     product = ForeignKeyField(Product, backref='sales')
     reservation = ForeignKeyField(Reservation, backref='sales')
-    price = FloatField()
+    price = FloatField(default=None, null=True)
     quantity = IntegerField(default=1)
+
+    def total_price(self):
+        if not self.price:
+            self.price = self.product.initial_price
+        return float(self.quantity * self.price)
 
 
 
 def create_tables():
     with database:
         database.create_tables(
-            [Society, Guest, Reservation, Stay, Paiement, GuestReservation, Product]
+            [Society, Guest, Reservation, Stay, Paiement, GuestReservation, CategoryProduct, Product, Sale]
         )
 
 
