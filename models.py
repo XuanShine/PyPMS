@@ -6,7 +6,10 @@ from enum import Enum
 database = SqliteDatabase("reservation.db")
 
 
-PaymentMethod = Enum('PaymentMethod', 'CB ESPECE CHEQUE CHEQUE_VACANCE VAD VIREMENT AUTRE')
+PaymentMethod = Enum(
+    "PaymentMethod", "CB ESPECE CHEQUE CHEQUE_VACANCE VAD VIREMENT AUTRE"
+)
+
 
 class BaseModel(Model):
     class Meta:
@@ -77,7 +80,7 @@ class Paiement(BaseModel):
     amount = DecimalField(default=0)
     reservation = ForeignKeyField(Reservation, backref="paiements")
     pay_method = IntegerField(default=None, null=True)
-    notes = CharField(default='')
+    notes = CharField(default="")
 
     def set_pay_method(self, method: PaymentMethod):
         self.pay_method = method.value
@@ -91,17 +94,21 @@ class Paiement(BaseModel):
 class CategoryProduct(BaseModel):
     name = CharField()
 
+
 class Product(BaseModel):
     name = CharField()
     initial_price = FloatField()
-    category = ForeignKeyField(CategoryProduct, backref='products', null=True, default=None)
+    category = ForeignKeyField(
+        CategoryProduct, backref="products", null=True, default=None
+    )
     tax = FloatField(default=0.2)
     stock = IntegerField(default=-1)
 
+
 class Sale(BaseModel):
     date = DateTimeField(default=datetime.now())
-    product = ForeignKeyField(Product, backref='sales')
-    reservation = ForeignKeyField(Reservation, backref='sales')
+    product = ForeignKeyField(Product, backref="sales")
+    reservation = ForeignKeyField(Reservation, backref="sales")
     price = FloatField(default=None, null=True)
     quantity = IntegerField(default=1)
 
@@ -111,11 +118,20 @@ class Sale(BaseModel):
         return float(self.quantity * self.price)
 
 
-
 def create_tables():
     with database:
         database.create_tables(
-            [Society, Guest, Reservation, Stay, Paiement, GuestReservation, CategoryProduct, Product, Sale]
+            [
+                Society,
+                Guest,
+                Reservation,
+                Stay,
+                Paiement,
+                GuestReservation,
+                CategoryProduct,
+                Product,
+                Sale,
+            ]
         )
 
 
@@ -133,5 +149,5 @@ database.create_tables([
     Stay,
     Paiement,
     Reservation,
-    GuestReservation])
+    GuestReservation, CategoryProduct, Product, Sale])
 """
