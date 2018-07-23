@@ -61,6 +61,18 @@ def insert_new(
     guest.reservations.add(res)
 
 
+def sell_product(
+    product: Product, date=dt.now(), price=None, quantity=1, in_res: Reservation = None
+):
+    if not in_res:
+        in_res = Reservation.create()
+    if not price:
+        price = product.initial_price
+    Sale.create(
+        date=date, price=price, product=product, reservation=in_res, quantity=quantity
+    )
+
+
 def payment(
     reservation: Reservation, date, amount: float, method: PaymentMethod, notes: str
 ):
@@ -205,6 +217,10 @@ class PMS_CLI:
             print(f"{n+1}: ")
             self._info_stay(stay, print_only=True)
             print("-" * 130)
+        for achat in reservation.sales:
+            print(
+                f"{achat.date}: {achat.product.name} x{achat.quantity} = {achat.total_price()}"
+            )
         paid = sum(map(lambda x: x.amount, reservation.paiements))
         print(
             f"Prix: {reservation.total_price()} - Payé: {paid} - Reste: {reservation.total_price() - float(paid)}"
@@ -214,7 +230,7 @@ class PMS_CLI:
             return
 
         user_input = input(
-            "d{n} - Séparer le séjour n dans une nouvelle réservation\ns{n} - Selectionner le séjour n\nc - Cancel\n"
+            "d{n} - Séparer le séjour n dans une nouvelle réservation\ns{n} - Selectionner le séjour n\na - Achat produit\nc - Cancel\n"
         )
         if user_input.startswith("d"):
             n = int(user_input[1:])
@@ -228,6 +244,8 @@ class PMS_CLI:
         elif user_input.startswith("s"):
             n = int(user_input[1:])
             self._info_stay(reservation.stays[n - 1])
+        elif user_input == "a":
+            self.achat(reservation)
 
     def new_reservation(self):
         name = input("Nom: ")
@@ -258,6 +276,13 @@ class PMS_CLI:
         else:
             date = dt.strptime(date, "%d/%m/%Y")
         payment(stay.reservation, date, amount, PaymentMethod(method), notes)
+
+    def achat(self, res):
+        print("Produit:")
+        for product in Product.select():
+            print(product.name, product.initial_price)
+        user_input = input("Numéro produit (commence à 1): ")
+        sell_product(Product.get(id=int(user_input)), in_res=res)
 
 
 if __name__ == "__main__":
