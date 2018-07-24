@@ -1,7 +1,9 @@
 
 from datetime import datetime
-from peewee import *
 from enum import Enum
+
+from peewee import *
+
 
 database = SqliteDatabase("reservation.db")
 
@@ -70,8 +72,7 @@ class Stay(BaseModel):
         if not self.name:
             if self.reservation and self.reservation.guests:
                 return " - ".join(map(str, list(self.reservation.guests)))
-            else:
-                return "No Name"
+            return "No Name"
         return self.name
 
 
@@ -81,6 +82,7 @@ class Paiement(BaseModel):
     reservation = ForeignKeyField(Reservation, backref="paiements")
     pay_method = IntegerField(default=None, null=True)
     notes = CharField(default="")
+    _signature = CharField(default="", null=True)
 
     def set_pay_method(self, method: PaymentMethod):
         self.pay_method = method.value
@@ -89,6 +91,57 @@ class Paiement(BaseModel):
         if not self.pay_method:
             return PaymentMethod.AUTRE
         return PaymentMethod(self.pay_method)
+
+    @classmethod
+    def create(cls, *args, **kwargs):
+        def sign(data):
+            # TODO: to complete
+            return data
+
+        pay = super().create(*args, **kwargs)
+        payments = list(cls.select())
+        sign_tmp = sign(f"{pay.date};{pay.amount};{pay.reservation.id}")
+        if len(payments) == 1:
+            pay._signature = sign_tmp
+            pay.save()
+        else:
+            prev = payments[-2]
+            pay._signature = sign(
+                f"{prev.date};{prev.amount};{prev.reservation.id}\n{sign_tmp}"
+            )
+            pay.save()
+            if len(payments) == 2:
+                prev._signature = pay._signature
+                prev.save()
+            else:
+                prev._signature = sign(prev._signature + "\n" + sign_tmp)
+                prev.save()
+        return pay
+
+    @classmethod
+    def verify(cls):
+        def verify_sign(data, hash):
+            # TODO: to complete
+            return (
+                "\n".join(
+                    [f"{d.date};{d.amount};{d.reservation.id}" for d in data if d]
+                )
+                == hash
+            )
+
+        def tmp_verify(x, y, z, tail):
+            if not tail:
+                return [verify_sign((y, z), z._signature)]
+            return [verify_sign((x, y, z), y._signature)] + tmp_verify(
+                y, z, tail[0], tail[1:]
+            )
+
+        payments = list(cls.select())
+        if not payments:
+            return [True]
+        elif len(payments) == 1:
+            return [verify_sign(("", payments[0]), payments[0]._signature)]
+        return tmp_verify("", payments[0], payments[1], payments[2:])
 
 
 class CategoryProduct(BaseModel):
