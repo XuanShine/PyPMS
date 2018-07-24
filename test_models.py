@@ -275,7 +275,7 @@ def test_paiement_verify(empty_db):
     assert all(Paiement.verify())
     Paiement.get(id=4).delete_instance()
     assert not all(Paiement.verify())
-    for payment in Paiement.select():
+    for payment in Paiement.select():  # delete all
         payment.delete_instance()
 
     Paiement.create(date=date, amount=20, reservation=Reservation.create())  # 1
@@ -286,4 +286,15 @@ def test_paiement_verify(empty_db):
     Paiement.create(date=date, amount=30, reservation=Reservation.create())  # 6
     assert all(Paiement.verify())
     Paiement.get(id=5).delete_instance()
+    assert not all(Paiement.verify())
+
+    for payment in Paiement.select():  # delete all
+        payment.delete_instance()
+
+    Paiement.create(date=date, amount=20, reservation=Reservation.create())  # 1
+    Paiement.create(date=date, amount=30, reservation=Reservation.create())  # 2
+    Paiement.create(date=date, amount=20, reservation=Reservation.create())  # 3
+    Paiement.create(date=date, amount=30, reservation=Reservation.create())  # 4
+    assert all(Paiement.verify())
+    Paiement.get(id=1).delete_instance()
     assert not all(Paiement.verify())
