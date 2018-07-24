@@ -11,6 +11,7 @@ main_menu = """\
 cal - Voir calendrier - ex: "cal:22/3/2018" ou "cal-6" ou "cal+10" ou "cal" (aujourd'hui)
 new - Nouvelle réservation
 s{chambre}-{date} - selectionne la réservation - ex: s102-18/07 ou s103-14/08/2017
+v - Verifier l'intégrité des transactions
 q - Quit
 """
 
@@ -76,9 +77,13 @@ def sell_product(
 def payment(
     reservation: Reservation, date, amount: float, method: PaymentMethod, notes: str
 ):
-    pay = Paiement(reservation=reservation, date=date, amount=amount, notes=notes)
-    pay.set_pay_method(method)
-    pay.save()
+    pay = Paiement.create(
+        reservation=reservation,
+        date=date,
+        amount=amount,
+        notes=notes,
+        pay_method=method.value,
+    )
 
 
 class PMS_CLI:
@@ -107,6 +112,11 @@ class PMS_CLI:
                 self.select(user_input[1:])
             elif user_input == "new":
                 self.new_reservation()
+            elif user_input == "v":
+                if all(Paiement.verify()):
+                    print("Les données sont intégrales")
+                else:
+                    print("Les données ont été corrompues")
 
     def quit(self):
         """Quit the program"""
