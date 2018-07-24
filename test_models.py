@@ -5,11 +5,22 @@ import pytest
 
 from models import *
 
-MODELS = [Society, Guest, Stay, Paiement, Reservation, GuestReservation, CategoryProduct, Product, Sale]
+MODELS = [
+    Society,
+    Guest,
+    Stay,
+    Paiement,
+    Reservation,
+    GuestReservation,
+    CategoryProduct,
+    Product,
+    Sale,
+]
+
 
 @pytest.yield_fixture
 def empty_db():
-    
+
     test_db = SqliteDatabase(":memory:")
     test_db.bind(MODELS, bind_refs=False, bind_backrefs=False)
     test_db.connect()
@@ -161,6 +172,7 @@ def test_paiement(db_guest):
     res_01_01_2018.save()
 
     paiement1 = Paiement(amount=30, reservation=res_01_01_2018)
+    paiement1.set_pay_method(PaymentMethod.CB)
     paiement1.save()
 
     assert res_01_01_2018.paiements[0].amount == 30
@@ -172,12 +184,13 @@ def test_paiement(db_guest):
     paiement2.save()
     assert res_01_01_2018.paiements[1].get_pay_method() == PaymentMethod.CB
 
-def test_product(empty_db):
-    Product.create(name='Soda (33cl)', initial_price=1.2, tax=0.2)
-    assert Product.select()[0].name == 'Soda (33cl)'
 
-    boisson = CategoryProduct.create(name='boisson')
-    soda = Product.get(Product.name == 'Soda (33cl)')
+def test_product(empty_db):
+    Product.create(name="Soda (33cl)", initial_price=1.2, tax=0.2)
+    assert Product.select()[0].name == "Soda (33cl)"
+
+    boisson = CategoryProduct.create(name="boisson")
+    soda = Product.get(Product.name == "Soda (33cl)")
     soda.category = boisson
     soda.save()
 
@@ -186,19 +199,24 @@ def test_product(empty_db):
 
 def test_sale(empty_db):
     res = Reservation.create()
-    p1 = Product.create(name='Soda (33cl)', initial_price=1.2, tax=0.2)
-    p2 = Product.create(name='Breakfast', initial_price=8, tax=0.1)
-    s1 = Sale.create(date=datetime(2018, 1, 1), reservation=res, product=p1, price=1, quantity=3)
+    p1 = Product.create(name="Soda (33cl)", initial_price=1.2, tax=0.2)
+    p2 = Product.create(name="Breakfast", initial_price=8, tax=0.1)
+    s1 = Sale.create(
+        date=datetime(2018, 1, 1), reservation=res, product=p1, price=1, quantity=3
+    )
     s2 = Sale.create(date=datetime(2018, 1, 2), reservation=res, product=p2, quantity=2)
     assert s1.total_price() == 3
     assert s2.total_price() == 16
     assert res.total_price() == 19
 
+
 def test_reservation_total_price(empty_db):
     res = Reservation.create()
-    p1 = Product.create(name='Soda (33cl)', initial_price=1.2, tax=0.2)
-    p2 = Product.create(name='Breakfast', initial_price=8, tax=0.1)
-    s1 = Sale.create(date=datetime(2018, 1, 1), reservation=res, product=p1, price=1, quantity=3)
+    p1 = Product.create(name="Soda (33cl)", initial_price=1.2, tax=0.2)
+    p2 = Product.create(name="Breakfast", initial_price=8, tax=0.1)
+    s1 = Sale.create(
+        date=datetime(2018, 1, 1), reservation=res, product=p1, price=1, quantity=3
+    )
     s2 = Sale.create(date=datetime(2018, 1, 2), reservation=res, product=p2, quantity=2)
     stay1 = Stay.create(
         prices="50 50",
@@ -208,5 +226,64 @@ def test_reservation_total_price(empty_db):
         room=101,
         name="jean",
     )
-    
+
     assert res.total_price() == 119
+
+
+def test_paiement_signature(empty_db):
+    date = datetime.now()
+    Paiement.create(
+        date=date,
+        amount=20,
+        reservation=Reservation.create(),
+        pay_method=PaymentMethod.CB.value,
+    )
+    assert Paiement.get()._signature == f"{date};20;1"
+    Paiement.create(
+        date=date,
+        amount=30,
+        reservation=Reservation.create(),
+        pay_method=PaymentMethod.CB.value,
+    )
+    pay2 = Paiement.get(id=2)
+    assert pay2._signature == f"{date};20;1\n{date};30;2"
+    pay1 = Paiement.get(id=1)
+    assert pay1._signature == f"{date};20;1\n{date};30;2"
+    Paiement.create(
+        date=date,
+        amount=40,
+        reservation=Reservation.create(),
+        pay_method=PaymentMethod.CB.value,
+    )
+    pay3 = Paiement.get(id=3)
+    pay2 = Paiement.get(id=2)
+    assert pay3._signature == f"{date};30;2\n{date};40;3"
+    assert pay1._signature == f"{date};20;1\n{date};30;2"
+    assert pay2._signature == f"{date};20;1\n{date};30;2\n{date};40;3"
+
+
+def test_paiement_verify(empty_db):
+    assert all(Paiement.verify())
+    date = datetime.now()
+    Paiement.create(date=date, amount=20, reservation=Reservation.create())  # 1
+    assert all(Paiement.verify())
+    Paiement.create(date=date, amount=30, reservation=Reservation.create())  # 2
+    assert all(Paiement.verify())
+    Paiement.create(date=date, amount=40, reservation=Reservation.create())  # 3
+    assert all(Paiement.verify())
+    Paiement.create(date=date, amount=50, reservation=Reservation.create())  # 4
+    assert all(Paiement.verify())
+    Paiement.get(id=4).delete_instance()
+    assert not all(Paiement.verify())
+    for payment in Paiement.select():
+        payment.delete_instance()
+
+    Paiement.create(date=date, amount=20, reservation=Reservation.create())  # 1
+    Paiement.create(date=date, amount=30, reservation=Reservation.create())  # 2
+    Paiement.create(date=date, amount=20, reservation=Reservation.create())  # 3
+    Paiement.create(date=date, amount=30, reservation=Reservation.create())  # 4
+    Paiement.create(date=date, amount=20, reservation=Reservation.create())  # 5
+    Paiement.create(date=date, amount=30, reservation=Reservation.create())  # 6
+    assert all(Paiement.verify())
+    Paiement.get(id=5).delete_instance()
+    assert not all(Paiement.verify())
