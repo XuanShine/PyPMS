@@ -79,6 +79,34 @@ def empty_db():
 
 
 @pytest.yield_fixture
+def empty_db_with_public_key_change():
+
+    test_db = SqliteDatabase(":memory:")
+    test_db.bind(MODELS, bind_refs=False, bind_backrefs=False)
+    test_db.connect()
+    test_db.create_tables(MODELS)
+
+    # Put entries here
+    os.rename("certificat", "certificat.save")
+    with open("certificat", "wb") as f_out:
+        pickle.dump(PRIVATE_KEY_TEST, f_out)
+    
+    os.rename('public_key', "public_key.save")
+    with open('public_key', 'wb') as f_out:
+        f_out.write(PUBLIC_KEY_TEST)
+
+    yield test_db
+
+    os.remove("certificat")
+    os.rename("certificat.save", "certificat")
+    os.remove('public_key')
+    os.rename('public_key.save', "public_key")
+
+    test_db.drop_tables(MODELS)
+    test_db.close()
+
+
+@pytest.yield_fixture
 def db_guest():
     test_db = SqliteDatabase(":memory:")
     test_db.bind(MODELS, bind_refs=False, bind_backrefs=False)
@@ -345,10 +373,13 @@ def test_paiement_verify(empty_db):
     for payment in Paiement.select():  # delete all
         payment.delete_instance()
 
+def test_paiement_verify_with_public_key_file(empty_db_with_public_key_change):
+    date = datetime.now()
     Paiement.create(date=date, amount=20, reservation=Reservation.create())  # 1
     Paiement.create(date=date, amount=30, reservation=Reservation.create())  # 2
     Paiement.create(date=date, amount=20, reservation=Reservation.create())  # 3
     Paiement.create(date=date, amount=30, reservation=Reservation.create())  # 4
-    assert all(Paiement.verify(PUBLIC_KEY_TEST))
+
+    assert all(Paiement.verify())
     Paiement.get(id=1).delete_instance()
-    assert not all(Paiement.verify(PUBLIC_KEY_TEST))
+    assert not all(Paiement.verify())
