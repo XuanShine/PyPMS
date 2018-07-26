@@ -93,41 +93,68 @@ class Paiement(BaseModel):
         return PaymentMethod(self.pay_method)
 
     @classmethod
-    def create(cls, *args, **kwargs):
-        def sign(data):
-            # TODO: to complete
-            return data
+    def create(cls, *args, **kwargs) -> bytes:
+        def sign(data: str) -> str(hex):
+            import pickle
+            from Crypto.PublicKey import RSA
+            from Crypto.Hash import SHA256
+            from Crypto.Signature import PKCS1_PSS
+
+            with open("certificat", "rb") as f_in:
+                key = RSA.importKey(pickle.load(f_in))
+            signer = PKCS1_PSS.new(key)
+            hashage = SHA256.new(data.encode())
+            return signer.sign(hashage).hex()
 
         pay = super().create(*args, **kwargs)
+
         payments = list(cls.select())
-        sign_tmp = sign(f"{pay.date};{pay.amount};{pay.reservation.id}")
+        data = f"{pay.date};{pay.amount};{pay.reservation.id}"
         if len(payments) == 1:
-            pay._signature = sign_tmp
+            pay._signature = sign(data)
             pay.save()
         else:
             prev = payments[-2]
             pay._signature = sign(
-                f"{prev.date};{prev.amount};{prev.reservation.id}\n{sign_tmp}"
+                f"{prev.date};{prev.amount};{prev.reservation.id}\n{data}"
             )
             pay.save()
             if len(payments) == 2:
                 prev._signature = pay._signature
                 prev.save()
             else:
-                prev._signature = sign(prev._signature + "\n" + sign_tmp)
+                prev2 = payments[-3]
+                prev._signature = sign(
+                    "\n".join(
+                        [
+                            f"{d.date};{d.amount};{d.reservation.id}"
+                            for d in (prev2, prev, pay)
+                            if d
+                        ]
+                    )
+                )
                 prev.save()
+
         return pay
 
     @classmethod
-    def verify(cls):
-        def verify_sign(data, hash):
-            # TODO: to complete
-            return (
-                "\n".join(
-                    [f"{d.date};{d.amount};{d.reservation.id}" for d in data if d]
-                )
-                == hash
+    def verify(cls, public_key=None):
+        from Crypto.PublicKey import RSA
+        from Crypto.Hash import SHA256
+        from Crypto.Signature import PKCS1_PSS
+        if not public_key:
+            with open('public_key', 'r') as f_in:
+                public_key = f_in.read()
+        public_key = RSA.importKey(public_key)
+        verifier = PKCS1_PSS.new(public_key)
+
+        def verify_sign(data, signature):
+            data = "\n".join(
+                [f"{d.date};{d.amount};{d.reservation.id}" for d in data if d]
             )
+            hashage = SHA256.new(data.encode())
+
+            return verifier.verify(hashage, bytes.fromhex(signature))
 
         def tmp_verify(x, y, z, tail):
             if not tail:
