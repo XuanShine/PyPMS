@@ -5,3 +5,5 @@ venv/
 .pylintrc
 migrations/
 migrate.py
+.tox/
+PyPMS.egg-info/

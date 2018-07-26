@@ -5,7 +5,12 @@ from datetime import timedelta
 
 from texttable import Texttable
 
-from models import *
+try:
+    from .models import *
+except ModuleNotFoundError:
+    from models import *
+
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 main_menu = """\
 cal - Voir calendrier - ex: "cal:22/3/2018" ou "cal-6" ou "cal+10" ou "cal" (aujourd'hui)

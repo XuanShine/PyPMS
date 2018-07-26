@@ -3,8 +3,15 @@
 import pytest
 from datetime import datetime as dt
 
-from models import *
-from pms_cli import *
+# import sys, os
+# myPath = os.path.dirname(os.path.abspath(__file__))
+# sys.path.insert(0, myPath + '/../')
+
+from PyPMS.models import *
+from PyPMS.pms_cli import *
+
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+
 
 MODELS = [
     Society,

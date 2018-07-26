@@ -1,15 +1,19 @@
 
+import os
 from datetime import datetime
 from enum import Enum
 
 from peewee import *
 
-
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 database = SqliteDatabase("reservation.db")
-
 
 PaymentMethod = Enum(
     "PaymentMethod", "CB ESPECE CHEQUE CHEQUE_VACANCE VAD VIREMENT AUTRE"
+)
+
+StayStatus = Enum(
+    "StayStatus", "DRAFT CONFIRMED CHECKED-IN CHECKED-OUT CLOSE"
 )
 
 
@@ -64,6 +68,7 @@ class Stay(BaseModel):
     reservation = ForeignKeyField(Reservation, backref="stays")
     room = IntegerField()
     name = CharField(default="")
+    status = IntegerField(default=StayStatus.DRAFT.value)
 
     def price(self):
         return sum(map(float, self.prices.strip().split()))
@@ -100,7 +105,7 @@ class Paiement(BaseModel):
             from Crypto.Hash import SHA256
             from Crypto.Signature import PKCS1_PSS
 
-            with open("certificat", "rb") as f_in:
+            with open(os.path.join(BASE_DIR, "certificat"), "rb") as f_in:
                 key = RSA.importKey(pickle.load(f_in))
             signer = PKCS1_PSS.new(key)
             hashage = SHA256.new(data.encode())
@@ -143,7 +148,7 @@ class Paiement(BaseModel):
         from Crypto.Hash import SHA256
         from Crypto.Signature import PKCS1_PSS
         if not public_key:
-            with open('public_key', 'r') as f_in:
+            with open(os.path.join(BASE_DIR, 'public_key'), 'r') as f_in:
                 public_key = f_in.read()
         public_key = RSA.importKey(public_key)
         verifier = PKCS1_PSS.new(public_key)

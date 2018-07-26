@@ -5,7 +5,13 @@ import pickle
 
 import pytest
 
-from models import *
+# import sys, os
+# myPath = os.path.dirname(os.path.abspath(__file__))
+# sys.path.insert(0, myPath + '/')
+
+from PyPMS.models import *
+
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 MODELS = [
     Society,
@@ -65,14 +71,14 @@ def empty_db():
     test_db.create_tables(MODELS)
 
     # Put entries here
-    os.rename("certificat", "certificat.save")
-    with open("certificat", "wb") as f_out:
+    os.rename(BASE_DIR + '/../PyPMS/' + "certificat", BASE_DIR + '/../PyPMS/' + "certificat.save")
+    with open(BASE_DIR + '/../PyPMS/' + "certificat", "wb") as f_out:
         pickle.dump(PRIVATE_KEY_TEST, f_out)
 
     yield test_db
 
-    os.remove("certificat")
-    os.rename("certificat.save", "certificat")
+    os.remove(BASE_DIR + '/../PyPMS/' + "certificat")
+    os.rename(BASE_DIR + '/../PyPMS/' + "certificat.save", BASE_DIR + '/../PyPMS/' + "certificat")
 
     test_db.drop_tables(MODELS)
     test_db.close()
@@ -87,20 +93,20 @@ def empty_db_with_public_key_change():
     test_db.create_tables(MODELS)
 
     # Put entries here
-    os.rename("certificat", "certificat.save")
-    with open("certificat", "wb") as f_out:
+    os.rename(BASE_DIR + '/../PyPMS/' + "certificat", BASE_DIR + '/../PyPMS/' + "certificat.save")
+    with open(BASE_DIR + '/../PyPMS/' + "certificat", "wb") as f_out:
         pickle.dump(PRIVATE_KEY_TEST, f_out)
     
-    os.rename('public_key', "public_key.save")
-    with open('public_key', 'wb') as f_out:
+    os.rename(BASE_DIR + '/../PyPMS/' + 'public_key', BASE_DIR + '/../PyPMS/' + "public_key.save")
+    with open(BASE_DIR + '/../PyPMS/' + 'public_key', 'wb') as f_out:
         f_out.write(PUBLIC_KEY_TEST)
 
     yield test_db
 
-    os.remove("certificat")
-    os.rename("certificat.save", "certificat")
-    os.remove('public_key')
-    os.rename('public_key.save', "public_key")
+    os.remove(BASE_DIR + '/../PyPMS/' + "certificat")
+    os.rename(BASE_DIR + '/../PyPMS/' + "certificat.save", BASE_DIR + '/../PyPMS/' + "certificat")
+    os.remove(BASE_DIR + '/../PyPMS/' + 'public_key')
+    os.rename(BASE_DIR + '/../PyPMS/' + 'public_key.save', BASE_DIR + '/../PyPMS/' + "public_key")
 
     test_db.drop_tables(MODELS)
     test_db.close()
