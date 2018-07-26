@@ -1,5 +1,7 @@
 
+import os
 from datetime import datetime
+import pickle
 
 import pytest
 
@@ -17,6 +19,9 @@ MODELS = [
     Sale,
 ]
 
+PRIVATE_KEY_TEST = b"-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEA6CVto63nraNgMyLL+5YGtPhUibX6NPC4nmPJJlgHhX/Ia68t\nItPP14w0XeMfUgbOLqn5V6+d2U7qVBOG4H2jyKC5FCzOUSVMuCstGvl6x/BW9Mhm\nIlmBCpizBSdrEaKjEK2OPnLDz/sLWoaWCDCf6HcvqH5vIcgFDR0fuipUSVwrleSH\nXINjtKoLde4gT+YbZlSgr+FR05DYKGgILzsITKzoEsbjsCdBAE0UqQf/VL/4yKWe\n0dP2kVmhu2daxNzsZUQeZWEUECo5eNspWrVnu9gHlCP0O5nG1PWCzPPZ5tZmZPc5\n7iBVCyfZ5HgpeYgrmKu9gdfC3eOlPh9zXgJJeQIDAQABAoIBAB4t/3rv+NaSDseX\nFn22m1ibkCH3Dngjc1zkDBp4B0JLwnp9Y5jLgJG9IHG0PTYkvFlEr62+nv7JS51y\njG5S5yAGBQmiaZATEU5ADrUbCeNEU4mvI9gDWstN3rgkz76TLi/U4FEuClbXhDpY\nlNiruZ43IHL/PONfZYi26JEDP8HpgjQwGhrDIIVEytigerI918D3npRT5e9frxQW\n+hvXYtMHHHAtLxLVhdpVWDjvdarK5Gp52gBGW14YEsAvyR9v5DEq9QXqq/891w2x\nwhZWpyXdwZvm2zutXvEY491GWezPzWD0R9fDAEgzGKwmEL181N4/8To0UKgIN3rS\nM/Gu6AECgYEA60yXaHcaA2AZHColy7dHk0eC9nemm3Aq23iThIX3OML02FOtutWN\nn3VmLPjnffLNlDs5c2oHhbBz3gRDRHUVitNlzNLGk9d6vaiesl/s/BK/+OkP7lCo\nZD/dyaTj+pCCsnlrCMDx/L4I/ybMDFVhaWhN5u0YUZrBI1hXEO6RPuECgYEA/JHT\nTTPbdMAYQ0PADs408mbzVMSIxDtTw9hFi4JHdNgF9ZEjRyQEVk8xWDxGhtf0Vu4b\nB0kFD2SFG69fa6sXUTFDVKvaJJSxssDT6G8aOUlG8kEPAFAfdWCyIryMK65+Lvg8\n2B22J+O8CKziSrSwqdGDl8dM8AzInyHTepizVZkCgYEAi0IKPg53O9YtJkkfk2DG\noLjrHnmUBlytULUdAYrT1Sk1Ba8InBH1vpEZxrYNM7J2zyr6Bn+TMiFLgfOd6C8v\nb7lLf5yjYC5ge00Hl2REeq+SJHuzLQVZk/NkjQnkz4+leoF3wneHAGFsK65Hh2kk\nvOC5clmSUgG4GvYWmXPITKECgYEAoOP0CrYCEnlb+11pNwU8zT2vvEwGI5r3XUaj\n5p7zDgeepDP0mRjkemawNFkRREzFJatAJH/rbUbHVD9/NYMjs2ECVymyKKNgH1Ke\nqu47ckqvmxq+h6CCqa8TSvV5BUp+r0UK3VDv/LEh0xTuglBgSY1hmoonBLPgCR7v\nLKWhd+ECgYAkCBadx+PeZ2KHi+Hq9w4vtiJc1MNUBieyXwWqYvXmOK6C7nX7Pykl\nVP/eYkCeY6akd7xhA8hWoBZFqcoq6+27MqZzPPnZLejW3XosvF7Qki1nOAWu/ztt\nLUQFDEEcURztY6/IMP/tDNc301Mca4GBCJGI2gfLxrqL8OD/3Bed+Q==\n-----END RSA PRIVATE KEY-----"
+PUBLIC_KEY_TEST = b"-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA6CVto63nraNgMyLL+5YG\ntPhUibX6NPC4nmPJJlgHhX/Ia68tItPP14w0XeMfUgbOLqn5V6+d2U7qVBOG4H2j\nyKC5FCzOUSVMuCstGvl6x/BW9MhmIlmBCpizBSdrEaKjEK2OPnLDz/sLWoaWCDCf\n6HcvqH5vIcgFDR0fuipUSVwrleSHXINjtKoLde4gT+YbZlSgr+FR05DYKGgILzsI\nTKzoEsbjsCdBAE0UqQf/VL/4yKWe0dP2kVmhu2daxNzsZUQeZWEUECo5eNspWrVn\nu9gHlCP0O5nG1PWCzPPZ5tZmZPc57iBVCyfZ5HgpeYgrmKu9gdfC3eOlPh9zXgJJ\neQIDAQAB\n-----END PUBLIC KEY-----"
+
 
 @pytest.yield_fixture
 def empty_db():
@@ -27,8 +32,14 @@ def empty_db():
     test_db.create_tables(MODELS)
 
     # Put entries here
+    os.rename("certificat", "certificat.save")
+    with open("certificat", "wb") as f_out:
+        pickle.dump(PRIVATE_KEY_TEST, f_out)
 
     yield test_db
+
+    os.remove("certificat")
+    os.rename("certificat.save", "certificat")
 
     test_db.drop_tables(MODELS)
     test_db.close()
@@ -231,6 +242,16 @@ def test_reservation_total_price(empty_db):
 
 
 def test_paiement_signature(empty_db):
+    def verify(signature, data):
+        from Crypto.PublicKey import RSA
+        from Crypto.Hash import SHA256
+        from Crypto.Signature import PKCS1_PSS
+
+        public_key = RSA.importKey(PUBLIC_KEY_TEST)
+        hashage = SHA256.new(data.encode())
+        verifier = PKCS1_PSS.new(public_key)
+        return verifier.verify(hashage, bytes.fromhex(signature))
+
     date = datetime.now()
     Paiement.create(
         date=date,
@@ -238,7 +259,7 @@ def test_paiement_signature(empty_db):
         reservation=Reservation.create(),
         pay_method=PaymentMethod.CB.value,
     )
-    assert Paiement.get()._signature == f"{date};20;1"
+    assert verify(Paiement.get()._signature, f"{date};20;1")
     Paiement.create(
         date=date,
         amount=30,
@@ -246,9 +267,9 @@ def test_paiement_signature(empty_db):
         pay_method=PaymentMethod.CB.value,
     )
     pay2 = Paiement.get(id=2)
-    assert pay2._signature == f"{date};20;1\n{date};30;2"
+    assert verify(pay2._signature, f"{date};20;1\n{date};30;2")
     pay1 = Paiement.get(id=1)
-    assert pay1._signature == f"{date};20;1\n{date};30;2"
+    assert verify(pay1._signature, f"{date};20;1\n{date};30;2")
     Paiement.create(
         date=date,
         amount=40,
@@ -257,24 +278,24 @@ def test_paiement_signature(empty_db):
     )
     pay3 = Paiement.get(id=3)
     pay2 = Paiement.get(id=2)
-    assert pay3._signature == f"{date};30;2\n{date};40;3"
-    assert pay1._signature == f"{date};20;1\n{date};30;2"
-    assert pay2._signature == f"{date};20;1\n{date};30;2\n{date};40;3"
+    assert verify(pay3._signature, f"{date};30;2\n{date};40;3")
+    assert verify(pay1._signature, f"{date};20;1\n{date};30;2")
+    assert verify(pay2._signature, f"{date};20;1\n{date};30;2\n{date};40;3")
 
 
 def test_paiement_verify(empty_db):
-    assert all(Paiement.verify())
+    assert all(Paiement.verify(PUBLIC_KEY_TEST))
     date = datetime.now()
     Paiement.create(date=date, amount=20, reservation=Reservation.create())  # 1
-    assert all(Paiement.verify())
+    assert all(Paiement.verify(PUBLIC_KEY_TEST))
     Paiement.create(date=date, amount=30, reservation=Reservation.create())  # 2
-    assert all(Paiement.verify())
+    assert all(Paiement.verify(PUBLIC_KEY_TEST))
     Paiement.create(date=date, amount=40, reservation=Reservation.create())  # 3
-    assert all(Paiement.verify())
+    assert all(Paiement.verify(PUBLIC_KEY_TEST))
     Paiement.create(date=date, amount=50, reservation=Reservation.create())  # 4
-    assert all(Paiement.verify())
+    assert all(Paiement.verify(PUBLIC_KEY_TEST))
     Paiement.get(id=4).delete_instance()
-    assert not all(Paiement.verify())
+    assert not all(Paiement.verify(PUBLIC_KEY_TEST))
     for payment in Paiement.select():  # delete all
         payment.delete_instance()
 
@@ -284,9 +305,9 @@ def test_paiement_verify(empty_db):
     Paiement.create(date=date, amount=30, reservation=Reservation.create())  # 4
     Paiement.create(date=date, amount=20, reservation=Reservation.create())  # 5
     Paiement.create(date=date, amount=30, reservation=Reservation.create())  # 6
-    assert all(Paiement.verify())
+    assert all(Paiement.verify(PUBLIC_KEY_TEST))
     Paiement.get(id=5).delete_instance()
-    assert not all(Paiement.verify())
+    assert not all(Paiement.verify(PUBLIC_KEY_TEST))
 
     for payment in Paiement.select():  # delete all
         payment.delete_instance()
@@ -295,6 +316,6 @@ def test_paiement_verify(empty_db):
     Paiement.create(date=date, amount=30, reservation=Reservation.create())  # 2
     Paiement.create(date=date, amount=20, reservation=Reservation.create())  # 3
     Paiement.create(date=date, amount=30, reservation=Reservation.create())  # 4
-    assert all(Paiement.verify())
+    assert all(Paiement.verify(PUBLIC_KEY_TEST))
     Paiement.get(id=1).delete_instance()
-    assert not all(Paiement.verify())
+    assert not all(Paiement.verify(PUBLIC_KEY_TEST))
