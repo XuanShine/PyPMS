@@ -100,16 +100,28 @@ class Paiement(BaseModel):
     @classmethod
     def create(cls, *args, **kwargs) -> bytes:
         def sign(data: str) -> str(hex):
+            import os
             import pickle
-            from Crypto.PublicKey import RSA
-            from Crypto.Hash import SHA256
-            from Crypto.Signature import PKCS1_PSS
+            from cryptography.hazmat.backends import default_backend
+            from cryptography.hazmat.primitives import serialization
+            from cryptography.hazmat.primitives import hashes
+            from cryptography.hazmat.primitives.asymmetric import padding
+            BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
             with open(os.path.join(BASE_DIR, "certificat"), "rb") as f_in:
-                key = RSA.importKey(pickle.load(f_in))
-            signer = PKCS1_PSS.new(key)
-            hashage = SHA256.new(data.encode())
-            return signer.sign(hashage).hex()
+                key = pickle.load(f_in)
+                key = serialization.load_pem_private_key(key, password=None,
+                                                            backend=default_backend())
+
+            signature = key.sign(
+                data.encode(),
+                padding.PSS(
+                    mgf = padding.MGF1(hashes.SHA256()),
+                    salt_length=padding.PSS.MAX_LENGTH
+                ),
+                hashes.SHA256()
+            )
+            return signature.hex()
 
         pay = super().create(*args, **kwargs)
 
@@ -143,23 +155,41 @@ class Paiement(BaseModel):
         return pay
 
     @classmethod
-    def verify(cls, public_key=None):
-        from Crypto.PublicKey import RSA
-        from Crypto.Hash import SHA256
-        from Crypto.Signature import PKCS1_PSS
+    def verify(cls, public_key:bytes=None):
+        import os
+        from cryptography.hazmat.backends import default_backend
+        from cryptography.hazmat.primitives import serialization
+        from cryptography.hazmat.primitives import hashes
+        from cryptography.hazmat.primitives.asymmetric import padding
+        from cryptography.exceptions import InvalidSignature
+
+        BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+
         if not public_key:
             with open(os.path.join(BASE_DIR, 'public_key'), 'r') as f_in:
-                public_key = f_in.read()
-        public_key = RSA.importKey(public_key)
-        verifier = PKCS1_PSS.new(public_key)
+                public_key = f_in.read().encode()
+
+        public_key = serialization.load_pem_public_key(public_key,
+                                                        backend=default_backend())
 
         def verify_sign(data, signature):
             data = "\n".join(
                 [f"{d.date};{d.amount};{d.reservation.id}" for d in data if d]
             )
-            hashage = SHA256.new(data.encode())
 
-            return verifier.verify(hashage, bytes.fromhex(signature))
+            try:
+                public_key.verify(
+                    bytes.fromhex(signature),
+                    data.encode(),
+                    padding.PSS(
+                        mgf=padding.MGF1(hashes.SHA256()),
+                        salt_length=padding.PSS.MAX_LENGTH
+                    ),
+                    hashes.SHA256()
+                )
+                return True
+            except InvalidSignature:
+                return False
 
         def tmp_verify(x, y, z, tail):
             if not tail:

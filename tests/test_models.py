@@ -310,14 +310,28 @@ def test_reservation_total_price(empty_db):
 
 def test_paiement_signature(empty_db):
     def verify(signature, data):
-        from Crypto.PublicKey import RSA
-        from Crypto.Hash import SHA256
-        from Crypto.Signature import PKCS1_PSS
+        import os
+        from cryptography.hazmat.backends import default_backend
+        from cryptography.hazmat.primitives import serialization
+        from cryptography.hazmat.primitives import hashes
+        from cryptography.hazmat.primitives.asymmetric import padding
+        from cryptography.exceptions import InvalidSignature
+        public_key = serialization.load_pem_public_key(PUBLIC_KEY_TEST,
+                                                    backend=default_backend())
+        try:
+            public_key.verify(
+                bytes.fromhex(signature),
+                data.encode(),
+                padding.PSS(
+                    mgf=padding.MGF1(hashes.SHA256()),
+                    salt_length=padding.PSS.MAX_LENGTH
+                ),
+                hashes.SHA256()
+            )
+            return True
+        except InvalidSignature:
+            return False
 
-        public_key = RSA.importKey(PUBLIC_KEY_TEST)
-        hashage = SHA256.new(data.encode())
-        verifier = PKCS1_PSS.new(public_key)
-        return verifier.verify(hashage, bytes.fromhex(signature))
 
     date = datetime.now()
     Paiement.create(
