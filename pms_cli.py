@@ -39,35 +39,6 @@ MESSAGE_IN_PAYMENT = """\
 ROOMS = [101, 102, 103, 104]
 
 
-def get_stays_between(start, end):
-    query = Stay.objects.filter(check_out__gte=start).filter(check_in__lte=end)
-    return query
-
-
-def insert_new(
-    name,
-    check_in: dt,
-    check_out: dt,
-    room: int,
-    prices: str,
-    notes,
-    in_res: Reservation = None,
-):
-    res = in_res or Reservation(notes=notes)
-    res.save()
-    stay = Stay(
-        reservation=res,
-        check_in=check_in,
-        check_out=check_out,
-        room=room,
-        prices=prices,
-    )
-    stay.save()
-    guest = Guest(name=name)
-    guest.save()
-    guest.reservations.add(res)
-
-
 def sell_product(
     product: Product, date=dt.now(), price=None, quantity=1, in_res: Reservation = None
 ):

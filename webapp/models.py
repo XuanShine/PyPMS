@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from enum import Enum
-from datetime import datetime
+from datetime import datetime as dt
+import datetime
 
 from django.db import models
 from django.db.models import (CharField, TextField, DateField, DateTimeField,
@@ -85,10 +86,16 @@ class Stay(models.Model):
         return self.name
     
     @classmethod
+    def get_stays_between(cls, start:datetime.date, end:datetime.date):
+        query = cls.objects.filter(check_out__gt=start).filter(check_in__lt=end)
+        return query
+
+
+    @classmethod
     def insert_new(cls,
         name,
-        check_in: datetime,
-        check_out: datetime,
+        check_in: dt,
+        check_out: dt,
         room: int,
         prices: str,
         notes,

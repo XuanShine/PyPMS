@@ -1,6 +1,7 @@
 
 import os
-from datetime import datetime
+from datetime import datetime as dt
+import datetime
 import pickle
 
 from django.utils import timezone
@@ -140,8 +141,8 @@ def test_stay(db_guest):
 
     stay1 = Stay(
         prices="50 50",
-        check_in=datetime(2018, 1, 1),
-        check_out=datetime(2018, 1, 3),
+        check_in=dt(2018, 1, 1),
+        check_out=dt(2018, 1, 3),
         reservation=res_01_01_2018,
         room=101,
     )
@@ -154,8 +155,8 @@ def test_stay(db_guest):
 
     stay2 = Stay(
         prices="60 50",
-        check_in=datetime(2018, 1, 1),
-        check_out=datetime(2018, 1, 3),
+        check_in=dt(2018, 1, 1),
+        check_out=dt(2018, 1, 3),
         reservation=res_01_01_2018,
         room=102,
     )
@@ -171,8 +172,8 @@ def test_stay_title(db_guest):
 
     stay1 = Stay(
         prices="50 50",
-        check_in=datetime(2018, 1, 1),
-        check_out=datetime(2018, 1, 3),
+        check_in=dt(2018, 1, 1),
+        check_out=dt(2018, 1, 3),
         reservation=res_01_01_2018,
         room=101,
         name="jean",
@@ -183,8 +184,8 @@ def test_stay_title(db_guest):
 
     stay2 = Stay(
         prices="60 50",
-        check_in=datetime(2018, 1, 1),
-        check_out=datetime(2018, 1, 3),
+        check_in=dt(2018, 1, 1),
+        check_out=dt(2018, 1, 3),
         reservation=res_01_01_2018,
         room=102,
     )
@@ -235,9 +236,9 @@ def test_sale():
     p1 = Product.objects.create(name="Soda (33cl)", initial_price=1.2, tax=0.2)
     p2 = Product.objects.create(name="Breakfast", initial_price=8, tax=0.1)
     s1 = Sale.objects.create(
-        date=datetime(2018, 1, 1), reservation=res, product=p1, price=1, quantity=3
+        date=dt(2018, 1, 1), reservation=res, product=p1, price=1, quantity=3
     )
-    s2 = Sale.objects.create(date=datetime(2018, 1, 2), reservation=res, product=p2, quantity=2)
+    s2 = Sale.objects.create(date=dt(2018, 1, 2), reservation=res, product=p2, quantity=2)
     assert s1.total_price() == 3
     assert s2.total_price() == 16
     assert res.total_price() == 19
@@ -248,13 +249,13 @@ def test_reservation_total_price():
     p1 = Product.objects.create(name="Soda (33cl)", initial_price=1.2, tax=0.2)
     p2 = Product.objects.create(name="Breakfast", initial_price=8, tax=0.1)
     s1 = Sale.objects.create(
-        date=datetime(2018, 1, 1), reservation=res, product=p1, price=1, quantity=3
+        date=dt(2018, 1, 1), reservation=res, product=p1, price=1, quantity=3
     )
-    s2 = Sale.objects.create(date=datetime(2018, 1, 2), reservation=res, product=p2, quantity=2)
+    s2 = Sale.objects.create(date=dt(2018, 1, 2), reservation=res, product=p2, quantity=2)
     stay1 = Stay.objects.create(
         prices="50 50",
-        check_in=datetime(2018, 1, 1),
-        check_out=datetime(2018, 1, 3),
+        check_in=dt(2018, 1, 1),
+        check_out=dt(2018, 1, 3),
         reservation=res,
         room=101,
         name="jean",
@@ -324,7 +325,7 @@ def test_paiement_signature(empty_db_with_public_key_change):
 @pytest.mark.django_db
 def test_paiement_verify(empty_db_with_public_key_change):
     assert all(Paiement.verify(PUBLIC_KEY_TEST))
-    date = datetime.now()
+    date = dt.now()
     Paiement.create(date=date, amount=20, reservation=Reservation.objects.create())  # 1
     assert all(Paiement.verify(PUBLIC_KEY_TEST))
     Paiement.create(date=date, amount=30, reservation=Reservation.objects.create())  # 2
@@ -353,7 +354,7 @@ def test_paiement_verify(empty_db_with_public_key_change):
 
 @pytest.mark.django_db
 def test_paiement_verify_with_public_key_file(empty_db_with_public_key_change):
-    date = datetime.now()
+    date = dt.now()
     Paiement.create(date=date, amount=20, reservation=Reservation.objects.create())  # 1
     Paiement.create(date=date, amount=30, reservation=Reservation.objects.create())  # 2
     Paiement.create(date=date, amount=20, reservation=Reservation.objects.create())  # 3
@@ -368,17 +369,71 @@ def test_insert_new():
     assert not Guest.objects.all()
     assert not Stay.objects.all()
     assert not Reservation.objects.all()
-    Stay.insert_new("Paul", datetime(2018, 1, 1).date(), datetime(2018, 1, 2).date(), 101, "50", "")
+    Stay.insert_new("Paul", dt(2018, 1, 1).date(), dt(2018, 1, 2).date(), 101, "50", "")
     assert Guest.objects.count() == 1
     assert Stay.objects.count() == 1
     assert Reservation.objects.count() == 1
     assert Reservation.objects.all()[0] in Guest.objects.get(name="Paul").reservations.all()
     res = Reservation()
     res.save()
-    Stay.insert_new("Jean", datetime(2018, 1, 1).date(), datetime(2018, 1, 2).date(), 101, "50", "", in_res=res)
-    Stay.insert_new("Dom", datetime(2018, 1, 1).date(), datetime(2018, 1, 2).date(), 102, "50", "", in_res=res)
+    Stay.insert_new("Jean", dt(2018, 1, 1).date(), dt(2018, 1, 2).date(), 101, "50", "", in_res=res)
+    Stay.insert_new("Dom", dt(2018, 1, 1).date(), dt(2018, 1, 2).date(), 102, "50", "", in_res=res)
     assert Guest.objects.count() == 3
     assert Stay.objects.count() == 3
     assert Reservation.objects.count() == 2
     assert res in Guest.objects.get(name="Jean").reservations.all()
     assert res in Guest.objects.get(name="Dom").reservations.all()
+
+
+@pytest.mark.django_db
+def test_get_stays_between():
+    res = Reservation()
+    res.save()
+    stay1 = Stay(
+        check_in=dt(2018, 1, 10), check_out=dt(2018, 1, 20), reservation=res, room=101
+    )  # yes
+    stay2 = Stay(
+        check_in=dt(2018, 1, 15), check_out=dt(2018, 1, 20), reservation=res, room=101
+    )  # no
+    stay3 = Stay(
+        check_in=dt(2018, 1, 14), check_out=dt(2018, 1, 15), reservation=res, room=101
+    )  # yes
+    stay4 = Stay(
+        check_in=dt(2018, 1, 15), check_out=dt(2018, 1, 16), reservation=res, room=101
+    )  # no
+    stay5 = Stay(
+        check_in=dt(2018, 1, 9), check_out=dt(2018, 1, 10), reservation=res, room=101
+    )  # no
+    stay6 = Stay(
+        check_in=dt(2018, 1, 8), check_out=dt(2018, 1, 9), reservation=res, room=101
+    )  # no
+    stay1.save()
+    stay2.save()
+    stay3.save()
+    stay4.save()
+    stay5.save()
+    stay6.save()
+    expected = list(Stay.get_stays_between(dt(2018, 1, 10), dt(2018, 1, 15)))
+    assert stay1 in expected
+    assert stay2 not in expected
+    assert stay3 in expected
+    assert stay4 not in expected
+    assert stay5 not in expected
+    assert stay6 not in expected
+
+@pytest.mark.django_db
+def test_stay_with_datetime_as_input():
+    res = Reservation()
+    res.save()
+    stay1 = Stay(
+        check_in=dt(2018, 1, 10), check_out=dt(2018, 1, 20), reservation=res, room=101
+    )
+    stay1.save()
+    assert type(Stay.objects.get(id=stay1.id).check_in) == datetime.date
+    assert not type(Stay.objects.get(id=stay1.id).check_in) == datetime.datetime
+
+
+@pytest.mark.skip(reason="TODO")
+@pytest.mark.django_db
+def test_stay_with_timezone_as_input():
+    pass
