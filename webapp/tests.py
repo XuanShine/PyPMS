@@ -243,6 +243,17 @@ def test_sale():
     assert s2.total_price() == 16
     assert res.total_price() == 19
 
+
+@pytest.mark.django_db
+def test_sale_with_date_input():
+    res = Reservation.objects.create()
+    p1 = Product.objects.create(name="Soda (33cl)", initial_price=1.2, tax=0.2)
+    s1 = Sale.objects.create(
+        date=datetime.date(2018, 1, 1), reservation=res, product=p1, price=1, quantity=3
+    )
+    assert type(Sale.objects.get(id=s1.id).date) == dt
+    assert not type(Sale.objects.get(id=s1.id).date) == datetime.date
+
 @pytest.mark.django_db
 def test_reservation_total_price():
     res = Reservation.objects.create()
@@ -437,3 +448,21 @@ def test_stay_with_datetime_as_input():
 @pytest.mark.django_db
 def test_stay_with_timezone_as_input():
     pass
+
+@pytest.mark.django_db
+def test_sell_product():
+    prod = Product.objects.create(name="Soda (33cl)", initial_price=1.2, tax=0.2)
+    Sale.sell_product(prod)
+    assert Reservation.objects.count()
+    assert Reservation.objects.get(id=1).sales.get().product == prod
+
+
+@pytest.mark.django_db
+def test_payment():
+    res = Reservation.objects.create()
+    Paiement.payment(res, dt.today(), 23, PaymentMethod.CB, "Test notes")
+    assert Paiement.objects.all()[0].amount == 23
+    assert Paiement.objects.all()[0].get_pay_method() == PaymentMethod.CB
+    assert Paiement.objects.all()[0].date.strftime("%d%m%Y") == dt.today().strftime("%d%m%Y")
+    assert Paiement.objects.all()[0].reservation == res
+    assert Paiement.objects.all()[0].notes == "Test notes"

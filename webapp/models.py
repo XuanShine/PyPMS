@@ -249,6 +249,19 @@ class Paiement(models.Model):
             return [verify_sign(("", payments[0]), payments[0]._signature)]
         return tmp_verify("", payments[0], payments[1], payments[2:])
 
+    @classmethod
+    def payment(cls,
+        reservation: Reservation, date, amount: float, method: PaymentMethod, notes:str = ""
+    ):
+        pay = cls.objects.create(
+            reservation=reservation,
+            date=date,
+            amount=amount,
+            notes=notes,
+            pay_method=method.value,
+        )
+        return cls.objects.get(id=pay.id)
+
 
 class CategoryProduct(models.Model):
     name = CharField(max_length=50)
@@ -288,3 +301,14 @@ class Sale(models.Model):
         if not self.price:
             self.price = self.product.initial_price
         return float(self.quantity * self.price)
+
+    @classmethod
+    def sell_product(cls,
+        product: Product, date=dt.now(), price=None, quantity=1, in_res: Reservation = None
+    ):
+        in_res = in_res or Reservation.objects.create()
+        price = price or product.initial_price
+        sale = cls.objects.create(
+            date=date, price=price, product=product, reservation=in_res, quantity=quantity
+        )
+        return cls.objects.get(id=sale.id)

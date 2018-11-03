@@ -39,29 +39,6 @@ MESSAGE_IN_PAYMENT = """\
 ROOMS = [101, 102, 103, 104]
 
 
-def sell_product(
-    product: Product, date=dt.now(), price=None, quantity=1, in_res: Reservation = None
-):
-    if not in_res:
-        in_res = Reservation.objects.create()
-    if not price:
-        price = product.initial_price
-    Sale.objects.create(
-        date=date, price=price, product=product, reservation=in_res, quantity=quantity
-    )
-
-
-def payment(
-    reservation: Reservation, date, amount: float, method: PaymentMethod, notes: str
-):
-    pay = Paiement.objects.create(
-        reservation=reservation,
-        date=date,
-        amount=amount,
-        notes=notes,
-        pay_method=method.value,
-    )
-
 
 class PMS_CLI:
     def run(self):
@@ -105,7 +82,7 @@ class PMS_CLI:
         now = self.main_date.date()
         start = now - timedelta(days=before)
         end = now + timedelta(days=after)
-        query = get_stays_between(start, end)
+        query = Stay.get_stays_between(start, end)
 
         table = []
 
@@ -242,7 +219,7 @@ class PMS_CLI:
         room = int(input("Chambre: "))
         price = input("prix: ")
         notes = input("Notes: ")
-        insert_new(name, check_in, check_out, room, price, notes)
+        Stay.insert_new(name, check_in, check_out, room, price, notes)
 
     def info_payment(self, stay: Stay):
         self._info_reservation(stay.reservation, print_only=True)
@@ -263,16 +240,15 @@ class PMS_CLI:
             date = dt.today()
         else:
             date = dt.strptime(date, "%d/%m/%Y")
-        payment(stay.reservation, date, amount, PaymentMethod(method), notes)
+        Paiement.payment(stay.reservation, date, amount, PaymentMethod(method), notes)
 
     def achat(self, res):
         print("Produit:")
         for product in Product.objects.all():
             print(product.name, product.initial_price)
         user_input = input("Numéro produit (commence à 1): ")
-        sell_product(Product.objects.get(id=int(user_input)), in_res=res)
+        Sale.sell_product(Product.objects.get(id=int(user_input)), in_res=res)
 
 
 if __name__ == "__main__":
     PMS_CLI().run()
-    pass
