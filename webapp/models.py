@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from enum import Enum
+from datetime import datetime
 
 from django.db import models
 from django.db.models import (CharField, TextField, DateField, DateTimeField,
@@ -60,8 +61,8 @@ class Reservation(models.Model):
 
 class Stay(models.Model):
     prices = TextField(default="")
-    check_in = DateTimeField(blank=True, null=True)
-    check_out = DateTimeField(blank=True, null=True)
+    check_in = DateField(blank=True, null=True)
+    check_out = DateField(blank=True, null=True)
     notes = TextField(default="")
     reservation = ForeignKey(
         Reservation,
@@ -82,6 +83,33 @@ class Stay(models.Model):
                 return " - ".join(map(str, list(self.reservation.guests.all())))
             return "No Name"
         return self.name
+    
+    @classmethod
+    def insert_new(cls,
+        name,
+        check_in: datetime,
+        check_out: datetime,
+        room: int,
+        prices: str,
+        notes,
+        in_res: Reservation = None,
+        guest: Guest = None
+    ):
+        res = in_res or Reservation(notes=notes)
+        res.save()
+        stay = cls(
+            reservation=res,
+            check_in=check_in,
+            check_out=check_out,
+            room=room,
+            prices=prices,
+        )
+        stay.save()
+        # TODO: rechercher le guest
+        guest = guest or Guest(name=name)
+        guest.save()
+        guest.reservations.add(res)
+        return cls.objects.get(id=stay.id)
 
 
 class Paiement(models.Model):

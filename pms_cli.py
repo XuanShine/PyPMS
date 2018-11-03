@@ -1,14 +1,15 @@
-
+import os
 import sys
 from datetime import datetime as dt
 from datetime import timedelta
 
 from texttable import Texttable
 
-try:
-    from .models import *
-except ModuleNotFoundError:
-    from models import *
+import django
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "PyPMS.settings")
+django.setup()
+
+from webapp.models import *
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
@@ -39,7 +40,7 @@ ROOMS = [101, 102, 103, 104]
 
 
 def get_stays_between(start, end):
-    query = Stay.select().where((Stay.check_out > start) & (Stay.check_in < end))
+    query = Stay.objects.filter(check_out__gte=start).filter(check_in__lte=end)
     return query
 
 
@@ -71,10 +72,10 @@ def sell_product(
     product: Product, date=dt.now(), price=None, quantity=1, in_res: Reservation = None
 ):
     if not in_res:
-        in_res = Reservation.create()
+        in_res = Reservation.objects.create()
     if not price:
         price = product.initial_price
-    Sale.create(
+    Sale.objects.create(
         date=date, price=price, product=product, reservation=in_res, quantity=quantity
     )
 
@@ -82,7 +83,7 @@ def sell_product(
 def payment(
     reservation: Reservation, date, amount: float, method: PaymentMethod, notes: str
 ):
-    pay = Paiement.create(
+    pay = Paiement.objects.create(
         reservation=reservation,
         date=date,
         amount=amount,
@@ -130,7 +131,7 @@ class PMS_CLI:
     def calendar(self, before=4, after=10):
         """Print calendar"""
         # improve: timedelta can be modify
-        now = self.main_date
+        now = self.main_date.date()
         start = now - timedelta(days=before)
         end = now + timedelta(days=after)
         query = get_stays_between(start, end)
@@ -140,7 +141,8 @@ class PMS_CLI:
         date = start
         tmp_table = [""]  # ['', 18/01, 19/01, etc..]
         while date < end:
-            if date + timedelta(hours=1) >= dt.today() >= date - timedelta(hours=1):
+            # if date + timedelta(hours=1) >= dt.today() >= date - timedelta(hours=1):
+            if date == dt.today().date():
                 tmp_table.append("#####")
             else:
                 tmp_table.append(date.strftime("%d/%m"))
@@ -180,12 +182,12 @@ class PMS_CLI:
             pass
         else:
             return None
-        date = dt.strptime(date, "%d/%m/%Y")
+        date = dt.strptime(date, "%d/%m/%Y").date()
 
-        query = Stay.select().where(
-            (Stay.check_in < date + timedelta(hours=1))
-            & (Stay.check_out > date)
-            & (Stay.room == room)
+        query = Stay.objects.filter(
+            check_in__lte=date).filter(
+            check_out__gte=date).filter(
+            room=room
         )
         assert len(list(query)) <= 1
         stay = list(query)[0]
@@ -212,9 +214,9 @@ class PMS_CLI:
             if user_input == "1":
                 stay.prices = value
             elif user_input == "2":
-                stay.check_in = dt.strptime(value, "%d/%m/%Y")
+                stay.check_in = dt.strptime(value, "%d/%m/%Y").date()
             elif user_input == "3":
-                stay.check_out = dt.strptime(value, "%d/%m/%Y")
+                stay.check_out = dt.strptime(value, "%d/%m/%Y").date()
             elif user_input == "4":
                 stay.room = int(value)
             elif user_input == "5":
@@ -228,15 +230,15 @@ class PMS_CLI:
             self.info_payment(stay)
 
     def _info_reservation(self, reservation: Reservation, print_only=False):
-        for n, stay in zip(range(len(reservation.stays)), reservation.stays):
+        for n, stay in enumerate(reservation.stays.all()):
             print(f"{n+1}: ")
             self._info_stay(stay, print_only=True)
             print("-" * 130)
-        for achat in reservation.sales:
+        for achat in reservation.sales.all():
             print(
                 f"{achat.date}: {achat.product.name} x{achat.quantity} = {achat.total_price()}"
             )
-        paid = sum(map(lambda x: x.amount, reservation.paiements))
+        paid = sum(map(lambda x: x.amount, reservation.paiements.all()))
         print(
             f"Prix: {reservation.total_price()} - Payé: {paid} - Reste: {reservation.total_price() - float(paid)}"
         )
@@ -276,7 +278,7 @@ class PMS_CLI:
         print("Paiements actuels:")
         if not stay.reservation.paiements:
             print("AUCUN")
-        for pay in stay.reservation.paiements:
+        for pay in stay.reservation.paiements.all():
             print(f"{pay.date}: {pay.amount}€ - {pay.get_pay_method()} - {pay.notes}")
         amount = input("Montant (c - cancel): ")
         if amount == "c":
@@ -294,12 +296,12 @@ class PMS_CLI:
 
     def achat(self, res):
         print("Produit:")
-        for product in Product.select():
+        for product in Product.objects.all():
             print(product.name, product.initial_price)
         user_input = input("Numéro produit (commence à 1): ")
-        sell_product(Product.get(id=int(user_input)), in_res=res)
+        sell_product(Product.objects.get(id=int(user_input)), in_res=res)
 
 
 if __name__ == "__main__":
-    # PMS_CLI().run()
+    PMS_CLI().run()
     pass

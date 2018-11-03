@@ -362,3 +362,23 @@ def test_paiement_verify_with_public_key_file(empty_db_with_public_key_change):
     assert all(Paiement.verify())
     Paiement.objects.get(id=1).delete()
     assert not all(Paiement.verify())
+
+@pytest.mark.django_db
+def test_insert_new():
+    assert not Guest.objects.all()
+    assert not Stay.objects.all()
+    assert not Reservation.objects.all()
+    Stay.insert_new("Paul", datetime(2018, 1, 1).date(), datetime(2018, 1, 2).date(), 101, "50", "")
+    assert Guest.objects.count() == 1
+    assert Stay.objects.count() == 1
+    assert Reservation.objects.count() == 1
+    assert Reservation.objects.all()[0] in Guest.objects.get(name="Paul").reservations.all()
+    res = Reservation()
+    res.save()
+    Stay.insert_new("Jean", datetime(2018, 1, 1).date(), datetime(2018, 1, 2).date(), 101, "50", "", in_res=res)
+    Stay.insert_new("Dom", datetime(2018, 1, 1).date(), datetime(2018, 1, 2).date(), 102, "50", "", in_res=res)
+    assert Guest.objects.count() == 3
+    assert Stay.objects.count() == 3
+    assert Reservation.objects.count() == 2
+    assert res in Guest.objects.get(name="Jean").reservations.all()
+    assert res in Guest.objects.get(name="Dom").reservations.all()
