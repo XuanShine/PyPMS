@@ -1,0 +1,26 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>PyPMS</title>
+
+    <link href="{% static 'webapp/css/fullcalendar.min.css' %}" rel='stylesheet' />
+    <link href="{% static 'webapp/css/scheduler.css' %}" rel='stylesheet' />
+
+    <script src="{% static 'webapp/js/moment.min.js' %}"></script>
+    <script src="{% static 'webapp/js/jquery.min.js' %}"></script>
+    <script src="{% static 'webapp/js/fullcalendar.min.js' %}"></script>
+    <script src="{% static 'webapp/js/scheduler.js' %}"></script>
+</head>
+<body>
+    Test
+    <div id='calendar'></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.11/lodash.min.js"></script>
+    <script src="{% static 'webapp/js/index.js' %}"></script>
+</body>
+</html>
