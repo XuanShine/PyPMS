@@ -10,17 +10,66 @@
 
     <link href="{% static 'webapp/css/fullcalendar.min.css' %}" rel='stylesheet' />
     <link href="{% static 'webapp/css/scheduler.css' %}" rel='stylesheet' />
+    <link type="text/css" rel="stylesheet" href="//unpkg.com/bootstrap/dist/css/bootstrap.min.css"/>
+    <link type="text/css" rel="stylesheet" href="//unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.css"/>
+    <!-- <link href="{% static 'webapp/css/bootstrap-datetimepicker.css' %}" rel='stylesheet' /> -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.8.0/css/bootstrap-datepicker.css" rel='stylesheet' />
 
     <script src="{% static 'webapp/js/moment.min.js' %}"></script>
     <script src="{% static 'webapp/js/jquery.min.js' %}"></script>
     <script src="{% static 'webapp/js/fullcalendar.min.js' %}"></script>
     <script src="{% static 'webapp/js/scheduler.js' %}"></script>
-</head>
-<body>
-    Test
-    <div id='calendar'></div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.11/lodash.min.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.5.17/dist/vue.js"></script>
+    <!-- <script src="https://unpkg.com/vuejs-datepicker"></script> -->
+    {% comment %} <script src="//unpkg.com/babel-polyfill@latest/dist/polyfill.min.js"></script>{% endcomment %}
+    <script src="//unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.8.0/js/bootstrap-datepicker.min.js"></script>
+    <!-- <script src="{% static 'webapp/js/bootstrap-datetimepicker.js' %}"></script> -->
+    
+</head>
+<body>
+    <div id='app'>
+        Affichage: <button id= 'haha' class='btn' @click='switchTo("booking")'>Calendrier</button> <button class='btn' @click='switchTo("price")'>Prix</button>
+        Date:    <input type="text" class="form-control" id='datepicker' value="12-02-2012">
+        <table v-if='display === "booking"' class='table'>
+            <tr>
+                <th>#</th>
+                <th v-for='date in period_range'>[[ date.format("DD/MM") ]]</th>
+            </tr>
+            <tr v-for='room in rooms_list'>
+                <td>[[ room ]]</td>
+                <!-- <template v-for='(date, index_date) in period_range'> -->
+                <td v-for='(date, index_date) in period_range' :class="booking(room, date).id">[[ booking(room, date).title ]]</td>
+                <!-- </template> -->
+            </tr>
+        </table>
+
+        <table v-else-if='display === "price"' class='table'>
+            <tr>
+                <th>#</th>
+                <th v-for='date in period_range'>[[ date.format("DD/MM") ]]</th>
+            </tr>
+            <tr v-for='room_type in room_type_list'>
+                <td>[[ room_type ]]</td>
+                <!-- <template v-for='(date, index_date) in period_range'> -->
+                <td v-for='(date, index_date) in period_range'>[[ price(room_type, date) ]]</td>
+                <!-- </template> -->
+            </tr>
+        </table>
+            
+
+        <pre>[[ $data ]]</pre>
+    </div>
+
+
     <script src="{% static 'webapp/js/index.js' %}"></script>
+    <script>
+            $('#datepicker').datepicker({
+                todayBtn: "linked"
+            });
+    </script>      
 </body>
 </html>

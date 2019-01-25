@@ -19,7 +19,7 @@ def get_stays_between(request, start, end):
                 "start": stay.check_in,
                 "end": stay.check_out,
                 "title" : stay.title(),
-                "resourceId" : stay.room
+                "room" : stay.room
             }
             for n, stay in enumerate(query)]
     return JsonResponse(data, safe=False)

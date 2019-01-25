@@ -1,48 +1,88 @@
-// $('#calendar').fullCalendar({
-//     defaultView: 'timelineMonth'
-// });
 
-let list_rooms = [];
-for (let n in _.range(4)) {
-    let room = 101 + Number(n);
-    list_rooms.push({ id: room.toString(), floor: "100", title: room });
+let rooms_list = [];
+for (let n of _.range(101, 105)) {
+    rooms_list.push(n)// { id: n.toString(), floor: "100", title: n });
 }
-for (let etage in _.range(4)) {
-    for (let n in _.range(8)) {
-        let room = (Number(etage) + 2) * 100 + Number(n) + 1
-        list_rooms.push({ id: room.toString(), floor: ((Number(etage) + 2) * 100).toString(), title: room });
+for (let etage of _.range(2, 6)) {
+    for (let n of _.range(1, 9)) {
+        let room = etage * 100 + n
+        rooms_list.push(room)// { id: room.toString(), floor: (etage*100).toString(), title: room });
     }
 }
 
-// let stays = [{"check_in": "2018-11-01", "check_out": "2018-11-02", "name": "Dupont", "room": 101, "status": 1}, {"check_in": "2018-11-03", "check_out": "2018-11-05", "name": "Tartagnan", "room": 103, "status": 1}, {"check_in": "2018-10-31", "check_out": "2018-11-04", "name": "Emmanuel", "room": 101, "status": 1}];
-// let stays_events = []
-// for (const [n, stay] of stays.entries()) {
-//     stays_events.push(
-//         { id: n.toString(), resourceId: stay.room.toString(), start: stay.check_in.toString(), end: stay.check_out.toString(), title: stay.name }
-//     )
-// }
 
-$('#calendar').fullCalendar({
-    header: {
-        center: 'calendarBooking' // buttons for switching between views
+
+let app = new Vue({
+    delimiters: ['[[', ']]'],
+    el: '#app',
+    data: {
+        message: 'Hello',
+        date_start: moment().subtract(10, 'days'),
+        date_end: moment().add(20, 'days'),
+        rooms_list: rooms_list,
+        room_type_list: ["Single Eco", "Single Balcony", "Double Eco", "Double Balcony", "Triple Eco", "Triple Balcony"],
+        booking_data: [],
+        display: "booking" // "booking", "price"
     },
-    aspectRatio: 3,
-    now: '2018-10-20',
-    editable: true,
-    defaultView: 'calendarBooking',
-    views: {
-        calendarBooking: {
-            type: 'timeline',
-            duration: { days: 30 },
-            buttonText: 'normal'
+    mounted: function() {
+        this.$nextTick(function() {
+            $.get("/api/stay/" + this.date_start.format("YYYY-MM-DD") + "/" + this.date_end.format("YYYY-MM-DD"),
+            function(data) {
+                app.booking_data = data;
+            })
+        })
+    },
+    computed: {
+        period_range: function() {
+            res = []
+            for (let i of _.range( moment.duration(this.date_end - this.date_start).asDays() )) {
+                res.push(moment(this.date_start + moment.duration(i, 'days')));
+            }
+            return res;
         }
     },
-    resourceGroupField: 'floor',
-    resources: list_rooms,
-    events: {
-        url: "/api/stay/2018-10-29/2018-11-10",
-        error: function() {
-            $('#script-warning').show();
+    methods: {
+        booking: function(room, date) {
+            let booking_data_in_room = this.booking_data.filter(data => data.room === room)
+                                                        .filter(data => moment(data.start) <= date && moment(data.end) > date)
+            if (booking_data_in_room.length > 0) {
+                return {title: booking_data_in_room[0].title}
+            }
+            return {title: ""}
+        },
+        price: function(room, date) {
+            return Math.floor((Math.random() * 40) + 44);;
+        },
+        switchTo: function(display){
+            this.display = display;
         }
-    }
+    },
 });
+
+// updateDateCalendar: function() {
+//     $('#calendar').fullCalendar({
+//         header: {
+//             center: 'calendarBooking' // buttons for switching between views
+//         },
+//         aspectRatio: 3,
+//         now: this.date_start.date,
+//         editable: true,
+//         defaultView: 'calendarBooking',
+//         views: {
+//             calendarBooking: {
+//                 type: 'timeline',
+//                 duration: { days: 30 },
+//                 buttonText: 'normal'
+//             }
+//         },
+//         resourceGroupField: 'floor',
+//         resources: list_rooms,
+//         events: {
+//             url: "/api/stay/" + this.date_start.date.format("YYYY-MM-DD") + "/" + this.date_end.format("YYYY-MM-DD"),
+//             error: function() {
+//                 $('#script-warning').show();
+//             }
+//         }
+//     });
+//     return this.date_start.date;
+// }
