@@ -22,7 +22,11 @@ let app = new Vue({
         rooms_list: rooms_list,
         room_type_list: ["Single Eco", "Single Balcony", "Double Eco", "Double Balcony", "Triple Eco", "Triple Balcony"],
         booking_data: [],
-        display: "booking" // "booking", "price"
+        display: "booking", // "booking", "price"
+        date_choosen: "",
+        current_res_choosen: {},
+        list_stays: [],
+        current_stay_id: 0
     },
     mounted: function() {
         this.$nextTick(function() {
@@ -46,7 +50,7 @@ let app = new Vue({
             let booking_data_in_room = this.booking_data.filter(data => data.room === room)
                                                         .filter(data => moment(data.start) <= date && moment(data.end) > date)
             if (booking_data_in_room.length > 0) {
-                return {title: booking_data_in_room[0].title}
+                return {title: booking_data_in_room[0].title, id: booking_data_in_room[0].id}
             }
             return {title: ""}
         },
@@ -55,34 +59,30 @@ let app = new Vue({
         },
         switchTo: function(display){
             this.display = display;
+        },
+        changeDate: function() {
+            this.date_choosen = $("#datepicker").val();
+            let day = moment(this.date_choosen);
+            this.date_start = moment(day).subtract(10, 'days');
+            this.date_end = moment(day).add(20, 'days');
+            this.updateDateDisplay();
+        },
+        updateDateDisplay: function() {
+            $.get("/api/stay/" + this.date_start.format("YYYY-MM-DD") + "/" + this.date_end.format("YYYY-MM-DD"),
+            function(data) {
+                app.booking_data = data;
+            })
+        },
+        showReservation: function(id) {
+            app.current_stay_id = id
+            $.get("/api/reservation/stay/" + id,
+                function(data) {
+                    reservationQuery = data[0]
+                    staysQuery = data[1]
+                    app.current_res_choosen = reservationQuery[0]['fields']
+                    app.list_stays = 0
+            })
         }
     },
 });
 
-// updateDateCalendar: function() {
-//     $('#calendar').fullCalendar({
-//         header: {
-//             center: 'calendarBooking' // buttons for switching between views
-//         },
-//         aspectRatio: 3,
-//         now: this.date_start.date,
-//         editable: true,
-//         defaultView: 'calendarBooking',
-//         views: {
-//             calendarBooking: {
-//                 type: 'timeline',
-//                 duration: { days: 30 },
-//                 buttonText: 'normal'
-//             }
-//         },
-//         resourceGroupField: 'floor',
-//         resources: list_rooms,
-//         events: {
-//             url: "/api/stay/" + this.date_start.date.format("YYYY-MM-DD") + "/" + this.date_end.format("YYYY-MM-DD"),
-//             error: function() {
-//                 $('#script-warning').show();
-//             }
-//         }
-//     });
-//     return this.date_start.date;
-// }

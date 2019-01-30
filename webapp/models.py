@@ -253,7 +253,8 @@ class Paiement(models.Model):
     def payment(cls,
         reservation: Reservation, date, amount: float, method: PaymentMethod, notes:str = ""
     ):
-        pay = cls.objects.create(
+        """ FIXME: Must test this function """
+        pay = cls.create(  # old: pay = cls.objects.create(
             reservation=reservation,
             date=date,
             amount=amount,

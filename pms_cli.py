@@ -33,10 +33,10 @@ MESSAGE_IN_PAYMENT = """\
  1: CB, 2: ESPECE, 3: CHEQUE, 4: CHEQUE_VACANCE, 5: VAD, 6: VIREMENT, 7: AUTRE
 """
 
-# ROOMS = [301, 302, 303, 304, 305, 306, 307, 308,
-#         401, 402, 403, 404, 405, 406, 407, 408,
-#         501, 502, 503, 504, 505, 506, 507, 508]
-ROOMS = [101, 102, 103, 104]
+ROOMS = [301, 302, 303, 304, 305, 306, 307, 308,
+         401, 402, 403, 404, 405, 406, 407, 408,
+         501, 502, 503, 504, 505, 506, 507, 508]
+# ROOMS = [101, 102, 103, 104]
 
 
 
@@ -214,8 +214,8 @@ class PMS_CLI:
 
     def new_reservation(self):
         name = input("Nom: ")
-        check_in = dt.strptime(input("check-in: ") + "/2018", "%d/%m/%Y")
-        check_out = dt.strptime(input("check-out: ") + "/2018", "%d/%m/%Y")
+        check_in = dt.strptime(input("check-in: ") + "/2019", "%d/%m/%Y")
+        check_out = dt.strptime(input("check-out: ") + "/2019", "%d/%m/%Y")
         room = int(input("Chambre: "))
         price = input("prix: ")
         notes = input("Notes: ")

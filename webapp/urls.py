@@ -20,5 +20,6 @@ from . import views
 
 urlpatterns = [
     path('home.html', views.home, name='home'),
-    path('api/stay/<str:start>/<str:end>', views.get_stays_between, name="stays_between")
+    path('api/stay/<str:start>/<str:end>', views.get_stays_between, name="stays_between"),
+    path('api/reservation/stay/<int:stayId>', views.getReservationFromStay, name="getReservationFromStay")
 ]
